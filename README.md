@@ -1,12 +1,6 @@
 989snd2wav
 ==========
 
-Dependencies
-------------
-
-* fmt
-
-
 Building
 --------
 To build on POSIX platforms or MinGW using GNU Make, simply run `make`. The following make
@@ -47,3 +41,9 @@ You should fill in the copyright and licensing information for your project here
 
 This project is based upon seq2wav, copyright (c) 2020 Adam Higerd and distributed
 under the terms of the [MIT license](LICENSE.md).
+
+This project incorporates [{fmt}](https://github.com/fmtlib/fmt), copyright (c)
+2012 - present, Victor Zverovich and distributed under the terms of the terms of
+the [MIT license](LICENSE.md).
+
+

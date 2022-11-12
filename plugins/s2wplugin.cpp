@@ -1,6 +1,6 @@
-#include "plugin/baseplugin.h"
 #include "codec/sampledata.h"
 #include "sndnode.h"
+#include "plugin/baseplugin.h"
 
 // In the functions below, ctx->openFile() is provided by the plugin interface. Use
 // this instead of standard library functions to open additional files in order to use
