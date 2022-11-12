@@ -3,17 +3,39 @@
 #include "midi_handler.h"
 #include "ame_handler.h"
 #include "synth/synthcontext.h"
-#include <iostream>
+#include "tagmap.h"
+#include <fstream>
 #include <stdexcept>
 
-SndSequence::SndSequence(SynthContext* ctx, double d)
-: BaseSequence(ctx->s2wContext()), synthCtx(ctx), m_duration(d)
+SndSequence::SndSequence(SynthContext* ctx)
+: BaseSequence(ctx->s2wContext()), synthCtx(ctx), m_duration(100)
 {
   // initializers only
 }
 
+double SndSequence::loadDuration(S2WContext* s2w, const std::string& path)
+{
+  std::string tagsPath = TagsM3U::relativeTo(path);
+  try {
+    auto tagsFile = s2w->openFile(tagsPath);
+    if (tagsFile && tagsFile->good()) {
+      TagsM3U m3u(*tagsFile);
+      int track = m3u.findTrack(path);
+      std::string durationStr = m3u.get(track, "LENGTH");
+      if (durationStr.size()) {
+        return std::stod(durationStr, nullptr);
+      }
+    }
+  } catch (...) {
+    // fall through
+  }
+  return 100;
+}
+
 void SndSequence::load(const std::string& path)
 {
+  m_duration = loadDuration(synthCtx->s2wContext(), path);
+
   auto file = synthCtx->s2wContext()->openFile(path);
   load(*file);
 }

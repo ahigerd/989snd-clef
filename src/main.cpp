@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 
   S2WContext s2w;
   SynthContext ctx(&s2w, 48000);
-  SndSequence seq(&ctx, 100);
+  SndSequence seq(&ctx);
   seq.load(infile);
   std::string filename = args.getString("output", infile + ".wav");
   std::cerr << "Writing " << (int(ctx.maximumTime() * 10) * .1) << " seconds to \"" << filename << "\"..." << std::endl;

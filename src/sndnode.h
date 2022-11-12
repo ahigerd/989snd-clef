@@ -16,7 +16,8 @@ class SndNode;
 class SndSequence : public BaseSequence<BasicTrack>
 {
 public:
-  SndSequence(SynthContext* ctx, double d);
+  static double loadDuration(S2WContext* s2w, const std::string& path);
+  SndSequence(SynthContext* ctx);
 
   void load(const std::string& path);
   void load(std::istream& stream);

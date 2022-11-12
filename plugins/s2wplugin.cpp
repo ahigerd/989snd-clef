@@ -23,7 +23,7 @@ struct S2WPluginInfo : public TagsM3UMixin {
 
   static double length(S2WContext* ctx, const std::string& filename, std::istream& file) {
     // Implementations should return the length of the file in seconds.
-    return 0;
+    return SndSequence::loadDuration(ctx, filename);
   }
 
   SynthContext* prepare(S2WContext* ctx, const std::string& filename, std::istream& file) {
@@ -34,7 +34,7 @@ struct S2WPluginInfo : public TagsM3UMixin {
     ctx->purgeSamples();
 
     SynthContext* synth = new SynthContext(ctx, 48000);
-    SndSequence* seq = new SndSequence(synth, 100);
+    SndSequence* seq = new SndSequence(synth);
     seq->load(file);
 
     return synth;
