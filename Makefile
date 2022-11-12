@@ -1,5 +1,7 @@
 include config.mak
 
+QMAKE = qmake
+
 cli: $(PLUGIN_NAME)$(EXE)
 
 debug: $(PLUGIN_NAME)_d$(EXE)
@@ -53,10 +55,10 @@ $(BUILDPATH)/lib$(PLUGIN_NAME)_d.a: includes src/Makefile $(BUILDPATH)/Makefile.
 	$(MAKE) -C src ../$@
 
 gui/Makefile: includes gui/gui.pro Makefile config.mak
-	cd gui && qmake BUILDPATH=../$(BUILDPATH) PLUGIN_NAME=$(PLUGIN_NAME) S2W_LDFLAGS="$(LDFLAGS_R)"
+	cd gui && $(QMAKE) BUILDPATH=../$(BUILDPATH) PLUGIN_NAME=$(PLUGIN_NAME) S2W_LDFLAGS="$(LDFLAGS_R)"
 
 gui/Makefile.debug: includes gui/gui.pro Makefile config.mak
-	cd gui && qmake -o Makefile.debug BUILD_DEBUG=1 BUILDPATH=../$(BUILDPATH) PLUGIN_NAME=$(PLUGIN_NAME) S2W_LDFLAGS="$(LDFLAGS_D)"
+	cd gui && $(QMAKE) -o Makefile.debug BUILD_DEBUG=1 BUILDPATH=../$(BUILDPATH) PLUGIN_NAME=$(PLUGIN_NAME) S2W_LDFLAGS="$(LDFLAGS_D)"
 
 $(PLUGIN_NAME)_gui$(EXE): includes src/Makefile $(BUILDPATH)/Makefile.d config.mak seq2wav/$(BUILDPATH)/libseq2wav.a gui/Makefile $(BUILDPATH)/lib$(PLUGIN_NAME).a
 	$(MAKE) -C gui
