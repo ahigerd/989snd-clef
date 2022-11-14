@@ -45,14 +45,14 @@ struct S2WPluginInfo : public TagsM3UMixin {
   }
 };
 
-const std::string S2WPluginInfo::version = "0.0.1";
+const std::string S2WPluginInfo::version = "0.0.2";
 const std::string S2WPluginInfo::pluginName = "989snd2wav";
 const std::string S2WPluginInfo::pluginShortName = "989snd2wav";
 ConstPairList S2WPluginInfo::extensions = { { "MUS", "989snd files (*.MUS)" } };
 const std::string S2WPluginInfo::about =
   "989snd2wav copyright (C) 2022 Adam Higerd\n"
   "Distributed under the MIT license.\n\n"
-  "Based on sndplay, copyright (C) 2020-2021 Ziemas\n"
+  "Based on jak-project, copyright (C) 2020-2022 OpenGOAL Team\n"
   "Used under the terms of the ISC license.";
 
 SEQ2WAV_PLUGIN(S2WPluginInfo);
