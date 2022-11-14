@@ -5,9 +5,12 @@
 #include "seq/isequence.h"
 #include "seq/itrack.h"
 #include "buffernode.h"
-#include "synth.h"
-#include "loader.h"
-#include "sound_handler.h"
+#include "989snd/midi_handler.h"
+#include "989snd/synth.h"
+#include "989snd/loader.h"
+#include "989snd/sound_handler.h"
+#include "989snd/musicbank.h"
+#include "989snd/vagvoice.h"
 #include <istream>
 #include <string>
 #include <memory>
@@ -34,7 +37,7 @@ class SndNode : public BufferNode {
 public:
   SndNode(double maxTime, const SynthContext* ctx);
 
-  void load(std::istream& stream);
+  void load(std::istream& stream, int subsong);
   bool isFinished() const;
 
 protected:
@@ -43,6 +46,7 @@ protected:
 private:
   snd::loader m_loader;
   snd::synth m_synth;
+  snd::voice_manager m_vmanager;
   std::unique_ptr<snd::sound_handler> handler;
   double maxTime;
   bool done;

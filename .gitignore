@@ -34,7 +34,7 @@ gui/*_plugin_import.cpp
 plugins/foobar2000
 plugins/pfc
 plugins/libPPUI
-src/sndplay
+jak-project
 
 # de-ignore submodule
 !/seq2wav

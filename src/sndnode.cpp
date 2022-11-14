@@ -1,7 +1,6 @@
 #include "sndnode.h"
 #include "s2wcontext.h"
-#include "midi_handler.h"
-#include "ame_handler.h"
+#include "989snd/ame_handler.h"
 #include "synth/synthcontext.h"
 #include "tagmap.h"
 #include <fstream>
@@ -21,13 +20,17 @@ double SndSequence::loadDuration(S2WContext* s2w, const std::string& path)
     if (tagsFile && tagsFile->good()) {
       TagsM3U m3u(*tagsFile);
       int track = m3u.findTrack(path);
-      std::string durationStr = m3u.get(track, "LENGTH");
+      std::string durationStr = m3u.get(track, "length_seconds_fp");
       if (durationStr.size()) {
         return std::stod(durationStr, nullptr);
       }
     }
+  } catch (std::exception& e) {
+    // fall through
+    std::cerr << "Error reading tags: " << e.what() << std::endl;
   } catch (...) {
     // fall through
+    std::cerr << "Error reading tags" << std::endl;
   }
   return 100;
 }
@@ -46,7 +49,7 @@ void SndSequence::load(std::istream& stream)
     throw std::runtime_error("already loaded a sequence");
   }
   node.reset(new SndNode(m_duration, synthCtx));
-  node->load(stream);
+  node->load(stream, 0);
   BasicTrack* track = new BasicTrack;
   AudioNodeEvent* event = new AudioNodeEvent(node);
   event->timestamp = 0;
@@ -82,25 +85,19 @@ bool SndSequence::isFinished() const
 }
 
 SndNode::SndNode(double maxTime, const SynthContext* ctx)
-: BufferNode(maxTime, ctx), m_synth(m_loader), maxTime(maxTime), done(false)
+: BufferNode(maxTime, ctx), m_vmanager(m_synth, m_loader), maxTime(maxTime), done(false)
 {
   // initializers only
 }
 
-void SndNode::load(std::istream& stream)
+void SndNode::load(std::istream& stream, int subsong)
 {
   uint32_t bankId = m_loader.read_bank(stream);
-  auto& bank = m_loader.get_bank(bankId);
-  auto& sound = bank.sounds.at(0);
-  auto header = m_loader.get_midi(sound.MIDIID);
-
-  if (sound.Type == 4) {
-    handler.reset(new snd::midi_handler(static_cast<snd::MIDIBlockHeader*>(header), m_synth, sound.Vol, 0, sound.Repeats, sound.VolGroup, m_loader));
-  } else if (sound.Type == 5) {
-    handler.reset(new snd::ame_handler(static_cast<snd::MultiMIDIBlockHeader*>(header), m_synth, sound.Vol, 0, sound.Repeats, sound.VolGroup, m_loader));
-  } else {
-    throw new std::runtime_error("unhandled sound type");
+  if (bankId == 0xFFFFFFFF) {
+    throw std::runtime_error("no supported content");
   }
+  auto bank = m_loader.get_bank_by_handle(bankId);
+  handler = bank->make_handler(m_vmanager, subsong, 0x400, 0, 0, 0);
 }
 
 int SndNode::fillBuffer(std::vector<int16_t>& buf)

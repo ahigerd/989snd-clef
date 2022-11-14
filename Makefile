@@ -14,7 +14,7 @@ all: cli plugins gui
 
 plugins: audacious
 
-includes: seq2wav/src $(wildcard seq2wav/src/*.h seq2wav/src/*/*.h) src/sndplay/meson.build
+includes: seq2wav/src $(wildcard seq2wav/src/*.h seq2wav/src/*/*.h)
 	$(MAKE) -C seq2wav includes
 
 audacious: aud_$(PLUGIN_NAME).$(DLL)
@@ -22,9 +22,6 @@ audacious: aud_$(PLUGIN_NAME).$(DLL)
 winamp: in_$(PLUGIN_NAME).dll
 
 foobar: foo_input_$(PLUGIN_NAME).dll
-
-src/sndplay/meson.build:
-	cd src && git clone https://github.com/Ziemas/sndplay
 
 seq2wav/src:
 	git submodule update --init --recursive

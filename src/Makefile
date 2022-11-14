@@ -1,19 +1,18 @@
 ROOTPATH := ../
 include ../config.mak
 
-SNDPLAY_SOURCES = loader.cpp midi_handler.cpp ame_handler.cpp synth.cpp voice.cpp envelope.cpp util.cpp
-SOURCES = $(filter-out main.cpp,$(wildcard *.cpp */*.cpp)) $(SNDPLAY_SOURCES:%=sndplay/src/%)
+SOURCES = $(filter-out main.cpp,$(wildcard *.cpp */*.cpp))
 OBJS_R = $(patsubst %.cpp, ../$(BUILDPATH)/%.o, $(SOURCES))
 OBJS_D = $(patsubst %.cpp, ../$(BUILDPATH)/%_d.o, $(SOURCES))
 MAIN_R = ../$(BUILDPATH)/main.o
 MAIN_D = ../$(BUILDPATH)/main_d.o
 
 ../$(PLUGIN_NAME)$(EXE): ../seq2wav/$(BUILDPATH)/libseq2wav.a $(OBJS_R) $(MAIN_R)
-	$(CXX) -o $@ $(OBJS_R) $(LDFLAGS_R)
+	$(CXX) -o $@ $(MAIN_R) $(OBJS_R) $(LDFLAGS_R)
 	strip $@
 
 ../$(PLUGIN_NAME)_d$(EXE): ../seq2wav/$(BUILDPATH)/libseq2wav_d.a $(OBJS_D) $(MAIN_D)
-	$(CXX) -o $@ $(OBJS_D) $(LDFLAGS_D)
+	$(CXX) -o $@ $(MAIN_D) $(OBJS_D) $(LDFLAGS_D)
 
 ../$(BUILDPATH)/lib$(PLUGIN_NAME).a: ../seq2wav/$(BUILDPATH)/libseq2wav.a $(filter-out ../$(BUILDPATH)/main.o,$(OBJS_R))
 	rm -f $@
