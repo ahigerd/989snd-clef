@@ -11,7 +11,8 @@ std::unique_ptr<sound_handler> MusicBank::make_handler(voice_manager& vm,
                                                        s32 vol,
                                                        s32 pan,
                                                        s32 pm,
-                                                       s32 pb) {
+                                                       s32 pb,
+                                                       s32 subsong) {
   auto& sound = sounds[sound_id];
   std::unique_ptr<sound_handler> handler;
 
@@ -20,7 +21,7 @@ std::unique_ptr<sound_handler> MusicBank::make_handler(voice_manager& vm,
     handler = std::make_unique<midi_handler>(midi, vm, sound, vol, pan, m_locator, bank_id);
   } else if (sound.Type == 5) {  // ame
     auto midi = static_cast<MultiMIDIBlockHeader*>(m_locator.get_midi(sound.MIDIID));
-    handler = std::make_unique<ame_handler>(midi, vm, sound, vol, pan, m_locator, bank_id);
+    handler = std::make_unique<ame_handler>(midi, vm, sound, vol, pan, m_locator, bank_id, subsong);
   } else {
     // error
   }

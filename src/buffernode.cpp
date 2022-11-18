@@ -3,7 +3,7 @@
 #include <iostream>
 
 BufferNode::BufferNode(double maxTime, const SynthContext* ctx)
-: AudioNode(ctx), buffer(int(ctx->sampleRate)), samplesAvailable(0), bufferTime(-1), maxTime(maxTime), skipSilence(true), done(false)
+: AudioNode(ctx), buffer(int(ctx->sampleRate)), samplesAvailable(0), bufferTime(-1), maxTime(maxTime), skipSilence(false), done(false)
 {
   // initializers only
 }

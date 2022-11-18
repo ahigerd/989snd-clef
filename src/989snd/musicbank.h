@@ -66,7 +66,16 @@ class MusicBank : public SoundBank {
                                               s32 vol,
                                               s32 pan,
                                               s32 pm,
-                                              s32 pb) override;
+                                              s32 pb) override {
+    return make_handler(vm, sound_id, vol, pan, pm, pb, 0);
+  }
+  std::unique_ptr<sound_handler> make_handler(voice_manager& vm,
+                                              u32 sound_id,
+                                              s32 vol,
+                                              s32 pan,
+                                              s32 pm,
+                                              s32 pb,
+                                              s32 subsong) override;
 
   std::vector<Prog> programs;
   std::vector<MIDISound> sounds;

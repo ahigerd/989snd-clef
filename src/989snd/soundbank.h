@@ -31,6 +31,15 @@ class SoundBank {
                                                       s32 vol,
                                                       s32 pan,
                                                       s32 pm,
+                                                      s32 pb,
+                                                      s32 /*subsong*/) {
+    return make_handler(vm, sound_id, vol, pan, pm, pb);
+  }
+  virtual std::unique_ptr<sound_handler> make_handler(voice_manager& vm,
+                                                      u32 sound_id,
+                                                      s32 vol,
+                                                      s32 pan,
+                                                      s32 pm,
                                                       s32 pb) = 0;
 
   u32 bank_id;

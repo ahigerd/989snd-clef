@@ -1,6 +1,7 @@
 // Copyright: 2021 - 2022, Ziemas
 // SPDX-License-Identifier: ISC
 #include "ame_handler.h"
+#include <iostream>
 
 #include "fmt/core.h"
 
@@ -17,7 +18,8 @@ ame_handler::ame_handler(MultiMIDIBlockHeader* block,
                          s32 vol,
                          s32 pan,
                          locator& loc,
-                         u32 bank)
+                         u32 bank,
+                         u32 segment)
     : m_sound(sound),
       m_bank(bank),
       m_header(block),
@@ -40,7 +42,7 @@ ame_handler::ame_handler(MultiMIDIBlockHeader* block,
     m_pan = pan;
   }
 
-  start_segment(0);
+  start_segment(segment);
 };
 
 bool ame_handler::tick() {
@@ -56,7 +58,15 @@ bool ame_handler::tick() {
   return m_midis.empty();
 };
 
+void ame_handler::set_subsong(u32 segment) {
+  stop();
+  start_segment(segment);
+}
+
 void ame_handler::start_segment(u32 id) {
+  if (id >= num_subsongs()) {
+    return;
+  }
   auto midiblock = (MIDIBlockHeader*)(m_header->BlockPtr[id] + (uintptr_t)m_header);
   m_midis.emplace(id, std::make_unique<midi_handler>(midiblock, m_vm, m_sound, m_vol, m_pan,
                                                      m_locator, m_bank, this));
@@ -249,14 +259,16 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         u8 comp = 0;
         if (m_groups[group].basis == 0) {
           comp = m_excite;
+          // std::cerr << fmt::format("group: {} basis: {} excite: {}", group, m_groups[group].basis, comp) << std::endl;
         } else {
           comp = m_register[m_groups[group].basis - 1];
         }
-        // fmt::print("group: {} basis: {} excite: {}\n", group, m_groups[group].basis, comp);
         for (int i = 0; i < m_groups[group].num_channels; i++) {
-          // auto xmin = m_groups[group].excite_min[i];
-          // auto xmax = m_groups[group].excite_max[i];
-          // fmt::print("chan {} excite: {}-{}\n", i, xmin, xmax);
+          if (m_groups[group].basis == 0) {
+            auto xmin = m_groups[group].excite_min[i];
+            auto xmax = m_groups[group].excite_max[i];
+            // std::cerr << fmt::format("chan {} excite: {}-{}", i, xmin, xmax) << std::endl;
+          }
           // note : added hack here! :-)
           if (!SoundFlavaHack &&
               (comp < m_groups[group].excite_min[i] || comp > m_groups[group].excite_max[i])) {

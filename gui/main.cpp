@@ -1,9 +1,23 @@
 #include <QApplication>
 #include "mainwindow.h"
+#include "sndwidget.h"
 #include "s2wcontext.h"
 #include "synth/synthcontext.h"
 #include "plugin/baseplugin.h"
 #include <QtDebug>
+
+class S989Window : public MainWindow
+{
+public:
+  S989Window(S2WPluginBase* plugin) : MainWindow(plugin) {}
+
+protected:
+  virtual QWidget* createPluginWidget(QWidget* parent) override {
+    SndWidget* w = new SndWidget(parent);
+    lockWhileWorking(w);
+    return w;
+  }
+};
 
 int main(int argc, char** argv)
 {
@@ -16,7 +30,7 @@ int main(int argc, char** argv)
   QCoreApplication::setOrganizationDomain("seq2wav" + QString::fromStdString(plugin->pluginShortName()));
   QApplication app(argc, argv);
 
-  MainWindow mw(plugin);
+  S989Window mw(plugin);
   mw.show();
   if (app.arguments().length() > 1) {
     mw.openFile(app.arguments()[1], true);

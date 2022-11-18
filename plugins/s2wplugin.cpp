@@ -33,9 +33,11 @@ struct S2WPluginInfo : public TagsM3UMixin {
     // Be sure to call this to clear the sample cache:
     ctx->purgeSamples();
 
+    ctx->pluginData = nullptr;
     SynthContext* synth = new SynthContext(ctx, 48000);
     SndSequence* seq = new SndSequence(synth);
-    seq->load(file);
+    seq->load(file, SndSequence::splitParams(filename).second);
+    ctx->pluginData = seq;
 
     return synth;
   }

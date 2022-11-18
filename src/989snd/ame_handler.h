@@ -26,7 +26,8 @@ class ame_handler : public sound_handler {
               s32 vol,
               s32 pan,
               locator& loc,
-              u32 bank);
+              u32 bank,
+              u32 segment = 0);
   bool tick() override;
   u32 bank() override { return m_bank; };
 
@@ -36,7 +37,9 @@ class ame_handler : public sound_handler {
   u8 group() override { return m_sound.VolGroup; };
   void set_vol_pan(s32 vol, s32 pan) override;
 
-  void set_register(u8 reg, u8 value) override { m_register[reg] = value; }
+  inline int num_subsongs() const { return m_header->NumMIDIBlocks; }
+  void set_subsong(u32 segment);
+  void set_register(u8 reg, u8 value) override { if (reg > 15) { m_excite = value; } else { m_register[reg] = value; } }
   void set_pmod(s32 mod) override;
 
  private:
