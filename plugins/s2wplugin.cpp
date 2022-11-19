@@ -47,7 +47,7 @@ struct S2WPluginInfo : public TagsM3UMixin {
   }
 };
 
-const std::string S2WPluginInfo::version = "0.0.2";
+const std::string S2WPluginInfo::version = "0.0.3";
 const std::string S2WPluginInfo::pluginName = "989snd2wav";
 const std::string S2WPluginInfo::pluginShortName = "989snd2wav";
 ConstPairList S2WPluginInfo::extensions = { { "MUS", "989snd files (*.MUS)" } };
