@@ -46,12 +46,21 @@ ame_handler::ame_handler(MultiMIDIBlockHeader* block,
 };
 
 bool ame_handler::tick() {
-  for (auto it = m_midis.begin(); it != m_midis.end();) {
+  std::vector<u32> ids;
+  for (auto it = m_midis.begin(); it != m_midis.end(); it++) {
+    ids.push_back(it->first);
+  }
+
+  for (int id : ids) {
+    auto it = m_midis.find(id);
+    if (it == m_midis.end()) continue;
     bool done = it->second->tick();
     if (done) {
-      it = m_midis.erase(it);
-    } else {
-      it++;
+      // Might have been erased during the tick
+      it = m_midis.find(id);
+      if (it != m_midis.end()) {
+        m_midis.erase(it);
+      }
     }
   }
 
@@ -150,6 +159,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
     auto op = static_cast<u8>(*stream++);
     switch (op) {
       case 0x0: {
+        sound_analyzer::log_excite_op(sound_analyzer::lte, stream[0] + 1);
         AME_BEGIN(op)
         if (m_excite <= (stream[0] + 1)) {
           skip = 1;
@@ -157,6 +167,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(1)
       } break;
       case 0x1: {
+        sound_analyzer::log_excite_op(sound_analyzer::ne, stream[0] + 1);
         AME_BEGIN(op)
         if (m_excite != (stream[0] + 1)) {
           skip = 1;
@@ -164,6 +175,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(1)
       } break;
       case 0x2: {
+        sound_analyzer::log_excite_op(sound_analyzer::gt, stream[0] + 1);
         AME_BEGIN(op)
         if (m_excite > (stream[0] + 1)) {
           skip = 1;
@@ -188,6 +200,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         }
       } break;
       case 0x6: {
+        sound_analyzer::log_reg_op(stream[0], sound_analyzer::gt, stream[1] - 1);
         AME_BEGIN(op)
         if (m_register[stream[0]] > (stream[1] - 1)) {
           skip = 1;
@@ -195,6 +208,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(2)
       } break;
       case 0x7: {
+        sound_analyzer::log_reg_op(stream[0], sound_analyzer::lt, stream[1] + 1);
         AME_BEGIN(op)
         if (m_register[stream[0]] < (stream[1] + 1)) {
           skip = 1;
@@ -219,6 +233,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(1)
       } break;
       case 0xd: {
+        sound_analyzer::log_reg_op(stream[0] - 1, sound_analyzer::call);
         AME_BEGIN(op)
         cont = false;
         done = true;
@@ -226,6 +241,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(1)
       } break;
       case 0xe: {
+        sound_analyzer::log_reg_op(stream[0] - 1, sound_analyzer::call);
         AME_BEGIN(op)
         start_segment(m_register[stream[0] - 1]);
         AME_END(1)
@@ -247,6 +263,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
             m_groups[group].channel[channel] = *stream++;
             m_groups[group].excite_min[channel] = *stream++;
             m_groups[group].excite_max[channel] = *stream++;
+            sound_analyzer::log_variant(group, m_groups[group].excite_min[channel], m_groups[group].excite_max[channel], 1 << channel);
             channel++;
           }
           m_groups[group].num_channels = channel;
@@ -260,15 +277,15 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         if (m_groups[group].basis == 0) {
           comp = m_excite;
           // std::cerr << fmt::format("group: {} basis: {} excite: {}", group, m_groups[group].basis, comp) << std::endl;
+          sound_analyzer::log_reg_op(sound_analyzer::excite, sound_analyzer::variant, comp);
         } else {
           comp = m_register[m_groups[group].basis - 1];
+          sound_analyzer::log_reg_op(m_groups[group].basis - 1, sound_analyzer::variant, comp);
         }
         for (int i = 0; i < m_groups[group].num_channels; i++) {
-          if (m_groups[group].basis == 0) {
-            auto xmin = m_groups[group].excite_min[i];
-            auto xmax = m_groups[group].excite_max[i];
-            // std::cerr << fmt::format("chan {} excite: {}-{}", i, xmin, xmax) << std::endl;
-          }
+          // auto xmin = m_groups[group].excite_min[i];
+          // auto xmax = m_groups[group].excite_max[i];
+          // std::cerr << fmt::format("chan {} excite: {}-{}", i, xmin, xmax) << std::endl;
           // note : added hack here! :-)
           if (!SoundFlavaHack &&
               (comp < m_groups[group].excite_min[i] || comp > m_groups[group].excite_max[i])) {
@@ -292,11 +309,13 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(1)
       } break;
       case 0x13: {
+        sound_analyzer::log_reg_op(stream[0], sound_analyzer::set, stream[1]);
         AME_BEGIN(op)
         m_register[stream[0]] = stream[1];
         AME_END(2)
       } break;
       case 0x14: {
+        sound_analyzer::log_reg_op(stream[0], sound_analyzer::inc);
         AME_BEGIN(op)
         if (m_register[stream[0]] < 0x7f) {
           m_register[stream[0]]++;
@@ -304,6 +323,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(1)
       } break;
       case 0x15: {
+        sound_analyzer::log_reg_op(stream[0], sound_analyzer::dec);
         AME_BEGIN(op)
         if (m_register[stream[0]] > 0) {
           m_register[stream[0]]--;
@@ -311,6 +331,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(1)
       } break;
       case 0x16: {
+        sound_analyzer::log_reg_op(stream[0], sound_analyzer::ne, stream[1]);
         AME_BEGIN(op)
         if (m_register[stream[0]] != stream[1]) {
           skip = 1;

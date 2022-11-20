@@ -271,6 +271,7 @@ void midi_handler::meta_event() {
   size_t len = m_seq_ptr[1];
 
   if (*m_seq_ptr == 0x2f) {
+    sound_analyzer::log_repeat(m_repeats);
     m_seq_ptr = m_seq_data_start;
 
     // If repeats was 0 we'll go negative, fail this test, and loop infinitely as intended

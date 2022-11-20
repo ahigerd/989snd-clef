@@ -29,6 +29,7 @@ include
 *_gui_d
 gui/Makefile*
 gui/*_plugin_import.cpp
+*.zip
 
 # external dependencies
 plugins/foobar2000

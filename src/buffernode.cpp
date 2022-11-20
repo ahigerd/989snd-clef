@@ -15,7 +15,7 @@ bool BufferNode::isActive() const
 
 int16_t BufferNode::generateSample(double time, int channel)
 {
-  if (time >= maxTime) {
+  if (maxTime >= 0 && time >= maxTime) {
     done = true;
     return 0;
   }

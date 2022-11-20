@@ -89,6 +89,8 @@ public:
   double duration() const { return m_duration; }
   bool isFinished() const;
 
+  inline void stop() { if (node) node->stop(); }
+
 private:
   SynthContext* synthCtx;
   double m_duration;

@@ -9,19 +9,19 @@
 struct S2WPluginInfo : public TagsM3UMixin {
   S2WPLUGIN_STATIC_FIELDS
 
-  static bool isPlayable(std::istream& file) {
+  static bool isPlayable(std::istream& /*file*/) {
     // Implementations should check to see if the file is supported.
     // Return false or throw an exception to report failure.
     return true;
   }
 
-  static int sampleRate(S2WContext* ctx, const std::string& filename, std::istream& file) {
+  static int sampleRate(S2WContext* /*ctx*/, const std::string& /*filename*/, std::istream& /*file*/) {
     // Implementations should return the sample rate of the file.
     // This can be hard-coded if the plugin always uses the same sample rate.
     return 48000;
   }
 
-  static double length(S2WContext* ctx, const std::string& filename, std::istream& file) {
+  static double length(S2WContext* ctx, const std::string& filename, std::istream& /*file*/) {
     // Implementations should return the length of the file in seconds.
     return SndSequence::loadDuration(ctx, filename);
   }
@@ -47,7 +47,7 @@ struct S2WPluginInfo : public TagsM3UMixin {
   }
 };
 
-const std::string S2WPluginInfo::version = "0.0.3";
+const std::string S2WPluginInfo::version = "0.0.4";
 const std::string S2WPluginInfo::pluginName = "989snd2wav";
 const std::string S2WPluginInfo::pluginShortName = "989snd2wav";
 ConstPairList S2WPluginInfo::extensions = { { "MUS", "989snd files (*.MUS)" } };

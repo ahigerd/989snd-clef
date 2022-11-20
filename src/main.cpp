@@ -2,10 +2,23 @@
 #include "riffwriter.h"
 #include "synth/synthcontext.h"
 #include "synth/channel.h"
+#include "989snd/sound_handler.h"
 #include "commandargs.h"
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+
+static const char* op_labels[] = {
+  "greater than",
+  "greater than or equal to",
+  "equal to",
+  "less than or equal to",
+  "call",
+  "select variant",
+  "set value to",
+  "increment value",
+  "decrement value",
+};
 
 int main(int argc, char** argv)
 {
@@ -30,6 +43,7 @@ int main(int argc, char** argv)
     { "r15", "", "value", "Start with register 15 set to the specified value (default: 0)" },
     { "excite", "x", "value", "Start with the excitement value set to the specified value (default: 0)" },
     { "subsong", "s", "index", "Play selected subsong (default: 0)" },
+    { "analyze", "a", "", "Analyze track for variants and length" },
     { "", "", "input", "Path to a .MUS file" },
   });
   std::string argError = args.parse(argc, argv);
@@ -45,6 +59,11 @@ int main(int argc, char** argv)
   }
 
   std::string infile = args.positional().at(0);
+
+  std::unique_ptr<snd::sound_analyzer> analyzer;
+  if (args.hasKey("analyze")) {
+    analyzer.reset(new snd::sound_analyzer());
+  }
 
   S2WContext s2w;
   SynthContext ctx(&s2w, 48000);
@@ -66,8 +85,78 @@ int main(int argc, char** argv)
   std::cerr << "Writing " << (int(ctx.maximumTime() * 10) * .1) << " seconds to \"" << filename << "\"..." << std::endl;
   RiffWriter riff(ctx.sampleRate, true);
   riff.open(filename);
+
+  double repeatDuration = -1;
+  int repeatCount = -1;
+  if (analyzer) {
+    analyzer->repeat_callback = [&](int count) {
+      repeatCount = count;
+      repeatDuration = ctx.currentTime();
+      seq.stop();
+    };
+  }
+
   ctx.save(&riff);
   riff.close();
+
+  if (analyzer) {
+    std::cerr << std::endl;
+    if (repeatDuration < 0) {
+      std::cerr << "Unable to analyze." << std::endl;
+      return 1;
+    }
+    std::cerr << "Duration: " << repeatDuration << std::endl;
+    if (repeatCount == 0) {
+      std::cerr << "Loops infinitely" << std::endl;
+    } else if (repeatCount >= 0) {
+      std::cerr << "Loops x" << repeatCount << std::endl;
+    }
+    std::cerr << std::endl;
+    for (int r = 0; r < 17; r++) {
+      const auto& ops = analyzer->regs[r];
+      if (!ops.size()) {
+        continue;
+      }
+      if (r == snd::sound_analyzer::excite) {
+        std::cerr << "Excite:" << std::endl;
+      } else {
+        std::cerr << "Register " << r << ":" << std::endl;
+      }
+      for (const auto& op : ops) {
+        std::cerr << "\t" << op_labels[op.op] << " ";
+        if (op.op != snd::sound_analyzer::call &&
+            op.op != snd::sound_analyzer::inc &&
+            op.op != snd::sound_analyzer::dec /* &&
+            op.op != snd::sound_analyzer::variant */) {
+          std::cerr << int(op.arg);
+        }
+        std::cerr << std::endl;
+      }
+      std::cerr << std::endl;
+    }
+    for (const auto& iter : analyzer->groups) {
+      std::cerr << "Group " << iter.first << ":" << std::endl;
+      int numChannels = 0;
+      for (const auto& r : iter.second) {
+        int ch = 0;
+        uint16_t mask = r.channels;
+        while (mask) {
+          mask >>= 1;
+          ch++;
+        }
+        if (ch > numChannels) numChannels = ch;
+      }
+      for (const auto& r : iter.second) {
+        std::cerr << "\t" << int(r.min) << " - " << int(r.max) << ": ";
+        for (int i = 0; i < numChannels; i++) {
+          std::cerr << ((r.channels & (1 << i)) ? "+" : "-");
+        }
+        std::cerr << std::endl;
+      }
+      std::cerr << std::endl;
+    }
+  }
+
   return 0;
 }
 

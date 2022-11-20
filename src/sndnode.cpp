@@ -50,7 +50,11 @@ double SndSequence::loadDuration(S2WContext* s2w, const std::string& path)
 void SndSequence::load(const std::string& path)
 {
   auto split = splitParams(path);
-  m_duration = loadDuration(synthCtx->s2wContext(), split.first);
+  if (snd::sound_analyzer::instance) {
+    m_duration = -1;
+  } else {
+    m_duration = loadDuration(synthCtx->s2wContext(), split.first);
+  }
   auto file = synthCtx->s2wContext()->openFile(split.first);
   load(*file, split.second);
 }
@@ -139,6 +143,7 @@ void SndNode::load(std::istream& stream, int subsong)
   }
   auto bank = m_loader.get_bank_by_handle(bankId);
   handler = bank->make_handler(m_vmanager, 0, 0x400, 0, 0, 0, subsong);
+  done = handler->tick();
   this->subsong = subsong;
 }
 
@@ -153,6 +158,10 @@ int SndNode::numSubsongs() const
 
 void SndNode::setSubsong(int index)
 {
+  if (numSubsongs() <= index) {
+    done = true;
+    return;
+  }
   subsong = index;
   auto ame = dynamic_cast<snd::ame_handler*>(handler.get());
   if (ame) {
@@ -215,7 +224,11 @@ std::shared_ptr<SequenceEvent> SndTrack::readNextEvent()
   }
   AudioNodeEvent* event = new AudioNodeEvent(node);
   event->timestamp = 0;
-  event->duration = node->duration();
+  if (snd::sound_analyzer::instance) {
+    event->duration = -1;
+  } else {
+    event->duration = node->duration();
+  }
   /*
   double fade = xsf.GetFadeMS(0) / 1000.0;
   if (fade > 0) {
