@@ -15,7 +15,7 @@ SndWidget::SndWidget(QWidget* parent)
 
   QGridLayout* layout = new QGridLayout(this);
 
-  QLabel* lSubsong = new QLabel(tr("Subsong:"), this);
+  QLabel* lSubsong = new QLabel(tr("MIDI Index:"), this);
   lSubsong->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
   subsong = new QSpinBox(this);
   subsong->setRange(0, 255);
