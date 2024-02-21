@@ -1,4 +1,4 @@
-PLUGIN_NAME = 989snd2wav
+PLUGIN_NAME = 989snd-clef
 
 cli: "$(PLUGIN_NAME).exe"
 
@@ -12,31 +12,31 @@ winamp: "in_$(PLUGIN_NAME).dll"
 
 foobar: "foo_input_$(PLUGIN_NAME).dll"
 
-seq2wav\src:
+libclef\src:
 	git submodules update --init --recursive
 
 !include depends.mak
 
 fmt\src\fm.obj: fmt\src\fm.cc
-	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /Dbyte=uint8_t /O2 /EHsc /I src /I seq2wav\src /I src/sndplay/src /I fmt/include /I plugins\foobar2000 /I plugins /wd4814 /c /Fo$@ $<
+	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /Dbyte=uint8_t /O2 /EHsc /I src /I libclef\src /I src/sndplay/src /I fmt/include /I plugins\foobar2000 /I plugins /wd4814 /c /Fo$@ $<
 
 fmt\src\format.obj: fmt\src\format.cc
-	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /Dbyte=uint8_t /O2 /EHsc /I src /I seq2wav\src /I src/sndplay/src /I fmt/include /I plugins\foobar2000 /I plugins /wd4814 /c /Fo$@ $<
+	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /Dbyte=uint8_t /O2 /EHsc /I src /I libclef\src /I src/sndplay/src /I fmt/include /I plugins\foobar2000 /I plugins /wd4814 /c /Fo$@ $<
 
 fmt\src\os.obj: fmt\src\os.cc
-	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /Dbyte=uint8_t /O2 /EHsc /I src /I seq2wav\src /I src/sndplay/src /I fmt/include /I plugins\foobar2000 /I plugins /wd4814 /c /Fo$@ $<
+	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /Dbyte=uint8_t /O2 /EHsc /I src /I libclef\src /I src/sndplay/src /I fmt/include /I plugins\foobar2000 /I plugins /wd4814 /c /Fo$@ $<
 
 .cpp.obj:
-	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /Dbyte=uint8_t /O2 /EHsc /I src /I seq2wav\src /I src/sndplay/src /I fmt/include /I plugins\foobar2000 /I plugins /wd4814 /c /Fo$@ $<
+	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /Dbyte=uint8_t /O2 /EHsc /I src /I libclef\src /I src/sndplay/src /I fmt/include /I plugins\foobar2000 /I plugins /wd4814 /c /Fo$@ $<
 
-plugins\foobarplugin.obj: plugins\s2wplugin.cpp seq2wav\src\plugins\foobarplugin.h FORCE
-	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /DBUILD_FOOBAR /O2 /EHsc /I src /I seq2wav\src /I plugins\foobar2000 /I plugins /c /Fo$@ plugins\s2wplugin.cpp
+plugins\foobarplugin.obj: plugins\clefplugin.cpp libclef\src\plugins\foobarplugin.h FORCE
+	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /DBUILD_FOOBAR /O2 /EHsc /I src /I libclef\src /I plugins\foobar2000 /I plugins /c /Fo$@ plugins\clefplugin.cpp
 
-plugins\audaciousplugin.obj: plugins\s2wplugin.cpp seq2wav\src\plugins\audaciousplugin.h FORCE
-	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /DBUILD_AUDACIOUS /O2 /EHsc /I src /I seq2wav\src /c /Fo$@ plugins\s2wplugin.cpp
+plugins\audaciousplugin.obj: plugins\clefplugin.cpp libclef\src\plugins\audaciousplugin.h FORCE
+	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /DBUILD_AUDACIOUS /O2 /EHsc /I src /I libclef\src /c /Fo$@ plugins\clefplugin.cpp
 
-plugins\winampplugin.obj: plugins\s2wplugin.cpp seq2wav\src\plugins\winampplugin.h FORCE
-	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /DBUILD_WINAMP /O2 /EHsc /I src /I seq2wav\src /c /Fo$@ plugins\s2wplugin.cpp
+plugins\winampplugin.obj: plugins\clefplugin.cpp libclef\src\plugins\winampplugin.h FORCE
+	$(CPP) /std:c++latest /DUNICODE /D_UNICODE /DNDEBUG /DBUILD_WINAMP /O2 /EHsc /I src /I libclef\src /c /Fo$@ plugins\clefplugin.cpp
 
 "$(PLUGIN_NAME).exe": src\main.obj
 	link.exe /subsystem:console /out:$@ $**

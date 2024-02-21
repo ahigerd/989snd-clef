@@ -1,2 +1,2 @@
-PLUGIN_NAME = 989snd2wav
--include $(ROOTPATH)seq2wav/config.mak
+PLUGIN_NAME = 989snd-clef
+-include $(ROOTPATH)libclef/config.mak

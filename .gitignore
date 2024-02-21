@@ -15,12 +15,13 @@
 *.lib
 build
 build_win
+.qmake.stash
 
 # build outputs
 depends.mak
 include
-*2wav
-*2wav_d
+*-clef
+*-clef_d
 *.dll
 *.a
 *.so

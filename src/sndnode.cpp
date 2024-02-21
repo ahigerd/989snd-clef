@@ -1,5 +1,5 @@
 #include "sndnode.h"
-#include "s2wcontext.h"
+#include "clefcontext.h"
 #include "989snd/ame_handler.h"
 #include "synth/synthcontext.h"
 #include "tagmap.h"
@@ -19,16 +19,16 @@ std::pair<std::string, std::string> SndSequence::splitParams(const std::string& 
 }
 
 SndSequence::SndSequence(SynthContext* ctx)
-: BaseSequence(ctx->s2wContext()), synthCtx(ctx), m_duration(100)
+: BaseSequence(ctx->clefContext()), synthCtx(ctx), m_duration(100)
 {
   // initializers only
 }
 
-double SndSequence::loadDuration(S2WContext* s2w, const std::string& path)
+double SndSequence::loadDuration(ClefContext* clef, const std::string& path)
 {
   std::string tagsPath = TagsM3U::relativeTo(path);
   try {
-    auto tagsFile = s2w->openFile(tagsPath);
+    auto tagsFile = clef->openFile(tagsPath);
     if (tagsFile && tagsFile->good()) {
       TagsM3U m3u(*tagsFile);
       int track = m3u.findTrack(path);
@@ -53,9 +53,9 @@ void SndSequence::load(const std::string& path)
   if (snd::sound_analyzer::instance) {
     m_duration = -1;
   } else {
-    m_duration = loadDuration(synthCtx->s2wContext(), split.first);
+    m_duration = loadDuration(synthCtx->clefContext(), split.first);
   }
-  auto file = synthCtx->s2wContext()->openFile(split.first);
+  auto file = synthCtx->clefContext()->openFile(split.first);
   load(*file, split.second);
 }
 

@@ -1,8 +1,4 @@
-This sample project has not been properly customized yet.
-
-This project is based upon seq2wav, distributed under the following terms:
-
-seq2wav is copyright (c) 2020 Adam Higerd
+989snd-clef is copyright (c) 2020-2024 Adam Higerd
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -20,6 +16,9 @@ OR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+989snd-clef is based on libclef, copyright (c) 2020-2024 Adam Higerd.
+libclef is distributed under the same terms as above.
 
 -----
 

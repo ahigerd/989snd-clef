@@ -65,8 +65,8 @@ int main(int argc, char** argv)
     analyzer.reset(new snd::sound_analyzer());
   }
 
-  S2WContext s2w;
-  SynthContext ctx(&s2w, 48000);
+  ClefContext clef;
+  SynthContext ctx(&clef, 48000);
   SndSequence seq(&ctx);
   seq.load(infile);
   if (args.hasKey("subsong")) {

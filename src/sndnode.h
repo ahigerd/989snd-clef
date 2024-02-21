@@ -1,7 +1,7 @@
 #ifndef S989_SNDNODE_H
 #define S989_SNDNODE_H
 
-#include "s2wcontext.h"
+#include "clefcontext.h"
 #include "seq/isequence.h"
 #include "seq/itrack.h"
 #include "buffernode.h"
@@ -67,7 +67,7 @@ private:
 class SndSequence : public BaseSequence<SndTrack>
 {
 public:
-  static double loadDuration(S2WContext* s2w, const std::string& path);
+  static double loadDuration(ClefContext* clef, const std::string& path);
   static std::pair<std::string, std::string> splitParams(const std::string& path);
   struct LoadParams {
     int subsong;

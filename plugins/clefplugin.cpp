@@ -6,27 +6,27 @@
 // this instead of standard library functions to open additional files in order to use
 // the host's virtual filesystem.
 
-struct S2WPluginInfo : public TagsM3UMixin {
-  S2WPLUGIN_STATIC_FIELDS
+struct ClefPluginInfo : public TagsM3UMixin {
+  CLEF_PLUGIN_STATIC_FIELDS
 
-  static bool isPlayable(std::istream& /*file*/) {
+  static bool isPlayable(ClefContext* /*ctx*/, const std::string& /*filename*/, std::istream& /*file*/) {
     // Implementations should check to see if the file is supported.
     // Return false or throw an exception to report failure.
     return true;
   }
 
-  static int sampleRate(S2WContext* /*ctx*/, const std::string& /*filename*/, std::istream& /*file*/) {
+  static int sampleRate(ClefContext* /*ctx*/, const std::string& /*filename*/, std::istream& /*file*/) {
     // Implementations should return the sample rate of the file.
     // This can be hard-coded if the plugin always uses the same sample rate.
     return 48000;
   }
 
-  static double length(S2WContext* ctx, const std::string& filename, std::istream& /*file*/) {
+  static double length(ClefContext* ctx, const std::string& filename, std::istream& /*file*/) {
     // Implementations should return the length of the file in seconds.
     return SndSequence::loadDuration(ctx, filename);
   }
 
-  SynthContext* prepare(S2WContext* ctx, const std::string& filename, std::istream& file) {
+  SynthContext* prepare(ClefContext* ctx, const std::string& filename, std::istream& file) {
     // Prepare to play the file. Load any necessary data into memory and store any
     // applicable state in members on this plugin object.
 
@@ -47,14 +47,14 @@ struct S2WPluginInfo : public TagsM3UMixin {
   }
 };
 
-const std::string S2WPluginInfo::version = "0.0.4";
-const std::string S2WPluginInfo::pluginName = "989snd2wav";
-const std::string S2WPluginInfo::pluginShortName = "989snd2wav";
-ConstPairList S2WPluginInfo::extensions = { { "MUS", "989snd files (*.MUS)" } };
-const std::string S2WPluginInfo::about =
-  "989snd2wav copyright (C) 2022 Adam Higerd\n"
+const std::string ClefPluginInfo::version = "0.0.6";
+const std::string ClefPluginInfo::pluginName = "989snd-clef";
+const std::string ClefPluginInfo::pluginShortName = "989snd-clef";
+ConstPairList ClefPluginInfo::extensions = { { "MUS", "989snd files (*.MUS)" } };
+const std::string ClefPluginInfo::about =
+  "989snd-clef copyright (C) 2022-2024 Adam Higerd\n"
   "Distributed under the MIT license.\n\n"
   "Based on jak-project, copyright (C) 2020-2022 OpenGOAL Team\n"
   "Used under the terms of the ISC license.";
 
-SEQ2WAV_PLUGIN(S2WPluginInfo);
+CLEF_PLUGIN(ClefPluginInfo);

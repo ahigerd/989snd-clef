@@ -1,5 +1,5 @@
 #include "sndwidget.h"
-#include "s2wcontext.h"
+#include "clefcontext.h"
 #include "synth/synthcontext.h"
 #include "sndnode.h"
 #include <QGridLayout>
@@ -59,7 +59,7 @@ void SndWidget::contextUpdated(SynthContext* ctx)
 
   if (ctx && ctx->channels.size()) {
     SndSequence* oldseq = seq;
-    seq = reinterpret_cast<SndSequence*>(ctx->s2wContext()->pluginData);
+    seq = reinterpret_cast<SndSequence*>(ctx->clefContext()->pluginData);
     if (!seq) {
       setEnabled(false);
       return;
