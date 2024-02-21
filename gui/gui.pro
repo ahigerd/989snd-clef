@@ -3,6 +3,7 @@ isEmpty(BUILDPATH) {
 }
 BUILDPATH = $$absolute_path($$BUILDPATH)
 include($$BUILDPATH/../libclef/gui/gui.pri)
+CONFIG += c++2a
 
 HEADERS += sndwidget.h
 SOURCES += sndwidget.cpp

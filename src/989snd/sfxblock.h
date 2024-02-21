@@ -1,128 +1,63 @@
 #pragma once
+#include <span>
 #include <vector>
 
+#include "sfxgrain.h"
 #include "soundbank.h"
 
 namespace snd {
 
-struct SFXBlockData : BankTag {
-  /*  10 */ s8 BlockNum;
-  /*  11 */ s8 pad1;
-  /*  12 */ s16 pad2;
-  /*  14 */ s16 pad3;
-  /*  16 */ s16 NumSounds;
-  /*  18 */ s16 NumGrains;
-  /*  1a */ s16 NumVAGs;
-  /*  1c */ u32 FirstSound;
-  /*  20 */ u32 FirstGrain;
-  /*  24 */ u32 VagsInSR;
-  /*  28 */ u32 VagDataSize;
-  /*  2c */ u32 SRAMAllocSize;
-  /*  30 */ u32 NextBlock;
-  /*  34 */ u32 BlockNames;
-  /*  38 */ u32 SFXUD;
-};
-
-static_assert(sizeof(SFXBlockData) == 0x38 + 4);
-
-struct XREFGrainParams {
-  /*   0 */ u32 BankID;
-  /*   4 */ u32 SoundIndex;
-  /*   8 */ s32 PitchMod;
-  /*   c */ u32 Flags;
-};
-
-struct RandDelayParams {
-  /*   0 */ s32 Amount;
-};
-
-struct ControlParams {
-  /*   0 */ s16 param[4];
-};
-
-struct LFOParams {
-  /*   0 */ u8 which_lfo;
-  /*   1 */ u8 target;
-  /*   2 */ u8 target_extra;
-  /*   3 */ u8 shape;
-  /*   4 */ u16 duty_cycle;
-  /*   6 */ u16 depth;
-  /*   8 */ u16 flags;
-  /*   a */ u16 start_offset;
-  /*   c */ u32 step_size;
-};
-
-struct PlaySoundParams {
-  /*   0 */ s32 vol;
-  /*   4 */ s32 pan;
-  /*   8 */ s8 reg_settings[4];
-  /*   c */ s32 sound_id;
-  /*  10 */ char snd_name[16];
-};
-
-struct PluginParams {
-  /*   0 */ u32 id;
-  /*   4 */ u32 index;
-  /*   8 */ u8 data[24];
-};
-
-struct LargestGrainParamStruct {
-  /*   0 */ char blank[32];
-};
-
-/*
-** Type 1 = Tone
-*/
-
-struct SFXGrain {
-  /*   0 */ u32 Type;
-  /*   4 */ s32 Delay;
-  union {
-    /*   8 */ Tone tone;
-    /*   8 */ XREFGrainParams xref;
-    /*   8 */ RandDelayParams delay;
-    /*   8 */ ControlParams control;
-    /*   8 */ LFOParams lfo;
-    /*   8 */ PlaySoundParams play_sound;
-    /*   8 */ PluginParams plugin_params;
-    /*   8 */ LargestGrainParamStruct junk;
-  } GrainParams;
-};
-
-struct SFXData {
-  /*   0 */ s8 Vol;
-  /*   1 */ s8 VolGroup;
-  /*   2 */ s16 Pan;
-  /*   4 */ s8 NumGrains;
-  /*   5 */ s8 InstanceLimit;
-  /*   6 */ u16 Flags;
-  /*   8 */ u32 FirstGrain;
-};
-
-enum SFXFlags {
-  Looper = 1,
-  SoloSound = 2,  // Stop previous instances
-};
-
-struct SFX {
-  SFXData d;
-  std::vector<SFXGrain> grains;
+struct SFXUserData {  // 0x10
+  /* 0x0 */ u32 data[4];
 };
 
 class SFXBlock : public SoundBank {
  public:
-  SFXBlock(locator& loc) : m_locator(loc) {}
-  std::unique_ptr<sound_handler> make_handler(voice_manager& vm,
-                                              u32 sound_id,
-                                              s32 vol,
-                                              s32 pan,
-                                              s32 pm,
-                                              s32 pb) override;
+  struct SFXFlags {
+    u16 flags;
 
-  std::vector<SFX> sounds;
+    static constexpr u32 SFX_LOOP = 1;
+    static constexpr u32 SFX_SOLO = 2;
+    static constexpr u32 SFX_INSTLIMIT = 8;
+    static constexpr u32 SFX_INSTLIMIT_VOL = 0x10;
+    static constexpr u32 SFX_INSTLIMIT_TICK = 0x20;
 
- private:
-  locator& m_locator;
+    bool has_loop() { return flags & SFX_LOOP; }
+    bool solo() { return flags & SFX_SOLO; }
+    bool has_instlimit() { return flags & SFX_INSTLIMIT; }
+    bool instlimit_vol() { return flags & SFX_INSTLIMIT_VOL; }
+    bool instlimit_tick() { return flags & SFX_INSTLIMIT_TICK; }
+  };
+
+  struct SFX {
+    s8 Vol;
+    s8 VolGroup;
+    s16 Pan;
+    s8 InstanceLimit;
+    SFXFlags Flags;
+
+    std::vector<Grain> Grains;
+    SFXUserData UserData;
+  };
+
+  std::vector<SFX> Sounds;
+  std::string Name;
+  std::map<std::string, u32> Names;
+  std::unique_ptr<u8[]> SampleData;
+
+  static SFXBlock* ReadBlock(std::span<u8> bank_data, std::span<u8> samples);
+
+  std::optional<std::unique_ptr<SoundHandler>> MakeHandler(VoiceManager& vm,
+                                                           u32 sound_id,
+                                                           s32 vol,
+                                                           s32 pan,
+                                                           SndPlayParams& params) override;
+
+  std::optional<std::string_view> GetName() override { return Name; };
+  std::optional<u32> GetSoundByName(const char* name) override;
+  std::optional<const SFXUserData*> GetSoundUserData(u32 sound_id) override {
+    return &Sounds.at(sound_id).UserData;
+  };
 };
 
 }  // namespace snd

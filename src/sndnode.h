@@ -35,10 +35,10 @@ protected:
   virtual int fillBuffer(std::vector<int16_t>& buf);
 
 private:
-  snd::loader m_loader;
-  snd::synth m_synth;
-  snd::voice_manager m_vmanager;
-  std::unique_ptr<snd::sound_handler> handler;
+  snd::Loader m_loader;
+  snd::Synth m_synth;
+  snd::VoiceManager m_vmanager;
+  std::unique_ptr<snd::SoundHandler> handler;
   double maxTime;
   bool done;
 

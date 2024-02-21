@@ -47,7 +47,7 @@ struct ClefPluginInfo : public TagsM3UMixin {
   }
 };
 
-const std::string ClefPluginInfo::version = "0.0.6";
+const std::string ClefPluginInfo::version = "0.1.0";
 const std::string ClefPluginInfo::pluginName = "989snd-clef";
 const std::string ClefPluginInfo::pluginShortName = "989snd-clef";
 ConstPairList ClefPluginInfo::extensions = { { "MUS", "989snd files (*.MUS)" } };

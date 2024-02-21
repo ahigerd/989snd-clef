@@ -49,4 +49,5 @@ the [MIT license](LICENSE.md).
 
 This project incorporates parts of [OpenGOAL](https://github.com/open-goal/jak-project),
 copyright (c) 2020-2022 OpenGOAL Team and distributed under the terms of the
-[ISC license](LICENSE.md).
+[ISC license](LICENSE.md). Parts of OpenGOAL may have additional copyright
+information; please consult the individual source files for more information.

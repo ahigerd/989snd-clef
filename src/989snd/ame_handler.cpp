@@ -11,21 +11,16 @@ namespace snd {
 
 // added!
 u64 SoundFlavaHack = 0;
+u8 GlobalExcite = 0;
 
-ame_handler::ame_handler(MultiMIDIBlockHeader* block,
-                         voice_manager& vm,
-                         MIDISound& sound,
-                         s32 vol,
-                         s32 pan,
-                         locator& loc,
-                         u32 bank,
-                         u32 segment)
-    : m_sound(sound),
-      m_bank(bank),
-      m_header(block),
-      m_locator(loc),
-      m_vm(vm),
-      m_repeats(sound.Repeats) {
+AmeHandler::AmeHandler(MultiMidi* block,
+                       VoiceManager& vm,
+                       MusicBank::MIDISound& sound,
+                       s32 vol,
+                       s32 pan,
+                       SoundBank& bank,
+                       u32 segment)
+    : m_sound(sound), m_bank(bank), m_header(block), m_vm(vm), m_repeats(sound.Repeats) {
   if (vol == VOLUME_DONT_CHANGE) {
     vol = 1024;
   }
@@ -42,74 +37,68 @@ ame_handler::ame_handler(MultiMIDIBlockHeader* block,
     m_pan = pan;
   }
 
-  start_segment(segment);
+  StartSegment(segment);
 };
 
-bool ame_handler::tick() {
-  std::vector<u32> ids;
-  for (auto it = m_midis.begin(); it != m_midis.end(); it++) {
-    ids.push_back(it->first);
-  }
-
-  for (int id : ids) {
-    auto it = m_midis.find(id);
-    if (it == m_midis.end()) continue;
-    bool done = it->second->tick();
+bool AmeHandler::Tick() {
+  for (auto it = m_midis.begin(); it != m_midis.end();) {
+    bool done = it->second->Tick();
     if (done) {
-      // Might have been erased during the tick
-      it = m_midis.find(id);
-      if (it != m_midis.end()) {
-        m_midis.erase(it);
-      }
+      it = m_midis.erase(it);
+    } else {
+      it++;
     }
   }
 
   return m_midis.empty();
 };
 
-void ame_handler::set_subsong(u32 segment) {
-  stop();
-  start_segment(segment);
+void AmeHandler::SetSubsong(u32 segment) {
+  Stop();
+  StartSegment(segment);
 }
 
-void ame_handler::start_segment(u32 id) {
-  if (id >= num_subsongs()) {
-    return;
+void AmeHandler::StartSegment(u32 id) {
+  if (m_midis.find(id) == m_midis.end()) {
+    auto& midi = m_header->midi[id];
+
+    // Skip adding if not midi type
+    u32 type = (midi.SoundHandle >> 24) & 0xf;
+    if (type == 1 || type == 3) {
+      m_midis.emplace(id, std::make_unique<MidiHandler>(static_cast<Midi*>(&midi), m_vm, m_sound,
+                                                        m_vol, m_pan, m_bank, this));
+    }
   }
-  auto midiblock = (MIDIBlockHeader*)(m_header->BlockPtr[id] + (uintptr_t)m_header);
-  m_midis.emplace(id, std::make_unique<midi_handler>(midiblock, m_vm, m_sound, m_vol, m_pan,
-                                                     m_locator, m_bank, this));
 }
 
-void ame_handler::stop() {
+void AmeHandler::Stop() {
   for (auto it = m_midis.begin(); it != m_midis.end();) {
-    it->second->stop();
+    it->second->Stop();
     it = m_midis.erase(it);
   }
 }
 
-void ame_handler::stop_segment(u32 id) {
+void AmeHandler::StopSegment(u32 id) {
   auto m = m_midis.find(id);
   if (m == m_midis.end())
     return;
 
-  m->second->stop();
-  m_midis.erase(id);
+  m->second->Stop();
 }
 
-void ame_handler::pause() {
+void AmeHandler::Pause() {
   for (auto& m : m_midis) {
-    m.second->pause();
+    m.second->Pause();
   }
 }
 
-void ame_handler::unpause() {
+void AmeHandler::Unpause() {
   for (auto& m : m_midis) {
-    m.second->unpause();
+    m.second->Unpause();
   }
 }
 
-void ame_handler::set_vol_pan(s32 vol, s32 pan) {
+void AmeHandler::SetVolPan(s32 vol, s32 pan) {
   if (vol >= 0) {
     if (vol != VOLUME_DONT_CHANGE) {
       m_vol = (m_sound.Vol * vol) >> 10;
@@ -129,12 +118,14 @@ void ame_handler::set_vol_pan(s32 vol, s32 pan) {
   }
 
   for (auto& m : m_midis) {
-    m.second->set_vol_pan(vol, pan);
+    m.second->SetVolPan(vol, pan);
   }
 }
 
-void ame_handler::set_pmod(s32 mod) {
-  // TODO
+void AmeHandler::SetPMod(s32 mod) {
+  for (auto& m : m_midis) {
+    m.second->SetPMod(mod);
+  }
 }
 
 #define AME_BEGIN(op) \
@@ -150,41 +141,52 @@ void ame_handler::set_pmod(s32 mod) {
     ;              \
   stream += (x);
 
-std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
+std::pair<bool, u8*> AmeHandler::RunAME(MidiHandler& midi, u8* stream) {
   int skip = 0;
   bool done = false;
   bool cont = true;
+
+  // fmt::print("AME SCRIPT ----\n");
+  // u8* dbgstream = stream;
+  // while (!done) {
+  //   fmt::print("{:02x} ", *dbgstream);
+  //   dbgstream++;
+
+  //  if (*dbgstream == 0xf7) {
+  //    dbgstream++;
+  //    done = true;
+  //  }
+  //}
+  // done = false;
+  // fmt::print("\n -------\n");
 
   while (!done) {
     auto op = static_cast<u8>(*stream++);
     switch (op) {
       case 0x0: {
-        sound_analyzer::log_excite_op(sound_analyzer::lte, stream[0] + 1);
         AME_BEGIN(op)
-        if (m_excite <= (stream[0] + 1)) {
+        if (GlobalExcite <= (stream[0] + 1)) {
           skip = 1;
         }
         AME_END(1)
       } break;
       case 0x1: {
-        sound_analyzer::log_excite_op(sound_analyzer::ne, stream[0] + 1);
         AME_BEGIN(op)
-        if (m_excite != (stream[0] + 1)) {
+        if (GlobalExcite != (stream[0] + 1)) {
           skip = 1;
         }
         AME_END(1)
       } break;
       case 0x2: {
-        sound_analyzer::log_excite_op(sound_analyzer::gt, stream[0] + 1);
         AME_BEGIN(op)
-        if (m_excite > (stream[0] + 1)) {
+        if (GlobalExcite > (stream[0] + 1)) {
           skip = 1;
         }
         AME_END(1)
       } break;
       case 0x3: {
         AME_BEGIN(op)
-        stop_segment(stream[0]);
+        StopSegment(stream[0]);
         AME_END(1)
       } break;
       case 0x4: {
@@ -200,7 +202,6 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         }
       } break;
       case 0x6: {
-        sound_analyzer::log_reg_op(stream[0], sound_analyzer::gt, stream[1] - 1);
         AME_BEGIN(op)
         if (m_register[stream[0]] > (stream[1] - 1)) {
           skip = 1;
@@ -208,7 +209,6 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(2)
       } break;
       case 0x7: {
-        sound_analyzer::log_reg_op(stream[0], sound_analyzer::lt, stream[1] + 1);
         AME_BEGIN(op)
         if (m_register[stream[0]] < (stream[1] + 1)) {
           skip = 1;
@@ -225,7 +225,7 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
       } break;
       case 0xc: {
         AME_BEGIN(op)
-        auto [sub_cont, ptr] = run_ame(midi, m_macro[stream[0]]);
+        auto [sub_cont, ptr] = RunAME(midi, m_macro[stream[0]]);
         if (!sub_cont) {
           cont = false;
           done = true;
@@ -233,17 +233,15 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_END(1)
       } break;
       case 0xd: {
-        sound_analyzer::log_reg_op(stream[0] - 1, sound_analyzer::call);
         AME_BEGIN(op)
         cont = false;
         done = true;
-        start_segment(m_register[stream[0] - 1]);
+        StartSegment(m_register[stream[0]] - 1);
         AME_END(1)
       } break;
       case 0xe: {
-        sound_analyzer::log_reg_op(stream[0] - 1, sound_analyzer::call);
         AME_BEGIN(op)
-        start_segment(m_register[stream[0] - 1]);
+        StartSegment(m_register[stream[0]] - 1);
         AME_END(1)
       } break;
       case 0xf: {
@@ -275,23 +273,24 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         u8 group = stream[0];
         u8 comp = 0;
         if (m_groups[group].basis == 0) {
-          comp = m_excite;
-          // std::cerr << fmt::format("group: {} basis: {} excite: {}", group, m_groups[group].basis, comp) << std::endl;
+          comp = GlobalExcite;
           sound_analyzer::log_reg_op(sound_analyzer::excite, sound_analyzer::variant, comp);
         } else {
           comp = m_register[m_groups[group].basis - 1];
           sound_analyzer::log_reg_op(m_groups[group].basis - 1, sound_analyzer::variant, comp);
         }
+        // std::cerr << fmt::format("group: {} basis: {} excite: {}", group, m_groups[group].basis, comp) << std::endl;
         for (int i = 0; i < m_groups[group].num_channels; i++) {
           // auto xmin = m_groups[group].excite_min[i];
           // auto xmax = m_groups[group].excite_max[i];
           // std::cerr << fmt::format("chan {} excite: {}-{}", i, xmin, xmax) << std::endl;
+
           // note : added hack here! :-)
           if (!SoundFlavaHack &&
               (comp < m_groups[group].excite_min[i] || comp > m_groups[group].excite_max[i])) {
-            midi.mute_channel(m_groups[group].channel[i]);
+            midi.MuteChannel(m_groups[group].channel[i]);
           } else {
-            midi.unmute_channel(m_groups[group].channel[i]);
+            midi.UnmuteChannel(m_groups[group].channel[i]);
           }
         }
         AME_END(1)
@@ -300,12 +299,12 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         AME_BEGIN(op)
         done = true;
         cont = false;
-        start_segment(stream[0]);
+        StartSegment(stream[0]);
         AME_END(1)
       } break;
       case 0x12: {
         AME_BEGIN(op)
-        start_segment(stream[0]);
+        StartSegment(stream[0]);
         AME_END(1)
       } break;
       case 0x13: {
@@ -334,12 +333,15 @@ std::pair<bool, u8*> ame_handler::run_ame(midi_handler& midi, u8* stream) {
         sound_analyzer::log_reg_op(stream[0], sound_analyzer::ne, stream[1]);
         AME_BEGIN(op)
         if (m_register[stream[0]] != stream[1]) {
+          // if (stream[0] == 3) {
+          //   fmt::print("AME x16 reg[{}] == {}\n", stream[0], stream[1]);
+          // }
           skip = 1;
         }
         AME_END(2)
       } break;
       default: {
-        throw ame_error(fmt::format("Unhandled AME event {:02x}", (u8)op));
+        throw AMEError(fmt::format("Unhandled AME event {:02x}", (u8)op));
       } break;
     }
 

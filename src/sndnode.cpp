@@ -130,28 +130,37 @@ bool SndSequence::isFinished() const
 }
 
 SndNode::SndNode(double maxTime, const SynthContext* ctx)
-: BufferNode(maxTime, ctx), m_vmanager(m_synth, m_loader), maxTime(maxTime), done(false)
+: BufferNode(maxTime, ctx), m_vmanager(m_synth), maxTime(maxTime), done(false)
 {
   // initializers only
 }
 
 void SndNode::load(std::istream& stream, int subsong)
 {
-  uint32_t bankId = m_loader.read_bank(stream);
-  if (bankId == 0xFFFFFFFF) {
+  std::vector<uint8_t> file_buf;
+  uint8_t buf[1024];
+  while (stream) {
+    stream.read(reinterpret_cast<char*>(buf), sizeof(buf));
+    auto ct = stream.gcount();
+    if (ct > 0) {
+      file_buf.insert(file_buf.end(), buf, buf + ct);
+    }
+  }
+  snd::BankHandle bankId = m_loader.BankLoad(file_buf);
+  if (bankId == nullptr) {
     throw std::runtime_error("no supported content");
   }
-  auto bank = m_loader.get_bank_by_handle(bankId);
-  handler = bank->make_handler(m_vmanager, 0, 0x400, 0, 0, 0, subsong);
-  done = handler->tick();
+  auto bank = m_loader.GetBankByHandle(bankId);
+  handler = bank->MakeHandler(m_vmanager, 0, 0x400, 0, 0, 0, subsong).value();
+  done = handler->Tick();
   this->subsong = subsong;
 }
 
 int SndNode::numSubsongs() const
 {
-  auto ame = dynamic_cast<snd::ame_handler*>(handler.get());
+  auto ame = dynamic_cast<snd::AmeHandler*>(handler.get());
   if (ame) {
-    return ame->num_subsongs();
+    return ame->NumSubsongs();
   }
   return 0;
 }
@@ -163,9 +172,9 @@ void SndNode::setSubsong(int index)
     return;
   }
   subsong = index;
-  auto ame = dynamic_cast<snd::ame_handler*>(handler.get());
+  auto ame = dynamic_cast<snd::AmeHandler*>(handler.get());
   if (ame) {
-    ame->set_subsong(index);
+    ame->SetSubsong(index);
   }
 }
 
@@ -173,7 +182,7 @@ void SndNode::setRegister(int index, int value)
 {
   if (index > 16) index = 16;
   regs[index] = value;
-  handler->set_register(index, value);
+  handler->SetRegister(index, value);
 }
 
 int SndNode::fillBuffer(std::vector<int16_t>& buf)
@@ -183,14 +192,14 @@ int SndNode::fillBuffer(std::vector<int16_t>& buf)
   }
   int numFrames = buf.size() / 400;
   int pos = 0;
-  snd::s16_output sample;
+  snd::s16Output sample;
   for (int i = 0; i < numFrames; i++) {
     for (int j = 0; j < 200; j++) {
-      sample = m_synth.tick();
+      sample = m_synth.Tick();
       buf[pos++] = sample.left;
       buf[pos++] = sample.right;
     }
-    done = handler->tick();
+    done = handler->Tick();
     if (done) {
       return pos;
     }
@@ -206,7 +215,7 @@ bool SndNode::isFinished() const
 void SndNode::stop()
 {
   if (handler) {
-    handler->stop();
+    handler->Stop();
   }
   done = true;
 }

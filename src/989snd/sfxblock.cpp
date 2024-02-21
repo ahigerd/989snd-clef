@@ -1,25 +1,32 @@
 #include "sfxblock.h"
 
 #include "blocksound_handler.h"
+#include "sfxgrain.h"
 
 namespace snd {
-std::unique_ptr<sound_handler> SFXBlock::make_handler(voice_manager& vm,
-                                                      u32 sound_id,
-                                                      s32 vol,
-                                                      s32 pan,
-                                                      s32 pm,
-                                                      s32 pb) {
-  std::unique_ptr<blocksound_handler> handler;
-  auto& SFX = sounds[sound_id];
 
-  if (SFX.grains.empty()) {
-    // fmt::print("skipping empty sfx\n");
-    return nullptr;
+std::optional<std::unique_ptr<SoundHandler>> SFXBlock::MakeHandler(VoiceManager& vm,
+                                                                   u32 sound_id,
+                                                                   s32 vol,
+                                                                   s32 pan,
+                                                                   SndPlayParams& params) {
+  auto& SFX = Sounds[sound_id];
+
+  if (SFX.Grains.empty()) {
+    return std::nullopt;
   }
 
-  handler = std::make_unique<blocksound_handler>(sounds[sound_id], vm, vol, pan, pm, pb, bank_id);
-  handler->init();
+  auto handler = std::make_unique<BlockSoundHandler>(*this, SFX, vm, vol, pan, params);
   return handler;
+}
+
+std::optional<u32> SFXBlock::GetSoundByName(const char* name) {
+  auto sound = Names.find(name);
+  if (sound != Names.end()) {
+    return sound->second;
+  }
+
+  return std::nullopt;
 }
 
 }  // namespace snd
