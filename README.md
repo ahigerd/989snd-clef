@@ -1,6 +1,8 @@
 989snd-clef
 ==========
 
+989snd-clef is a player for 989snd music sequences from games supported by OpenGOAL such as Jak & Daxter and Sly Cooper.
+
 Building
 --------
 To build on POSIX platforms or MinGW using GNU Make, simply run `make`. The following make
